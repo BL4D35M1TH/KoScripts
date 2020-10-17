@@ -1,7 +1,14 @@
 clearScreen.
 print "Landing sequence activated!".
 
-runOncePath("0:/hoho.ks", 0, time:seconds + eta:periapsis, ship:body:radius + periapsis).
+if periapsis > 10000 {
+    runPath("0:/hoho.ks",ship:body:radius + 10000, time:seconds + eta:apoapsis, ship:body:radius + apoapsis).
+}
+
+print "Waiting for things to settle down.".
+wait 1.
+
+runPath("0:/hoho.ks", 0, time:seconds + eta:periapsis, ship:body:radius + periapsis, true).
 
 sas off.
 legs on.
@@ -32,8 +39,7 @@ until false {
 
 lock throttle to 1.
 
-wait until verticalSpeed >= -10.
-lock steering to up.
+wait until verticalSpeed >= -20 or radar < 100.
 
 set PID to pidLoop(0.01,0.005,0.005).
 set PID:setpoint to -10.
@@ -42,6 +48,10 @@ lock throttle to thrott.
 
 when radar < 10 then {
     set PID:setpoint to -1.
+}
+
+when verticalSpeed > -10 then {
+    lock steering to up.
 }
 
 until radar < 2 {

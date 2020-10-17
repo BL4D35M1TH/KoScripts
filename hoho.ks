@@ -1,7 +1,7 @@
 parameter new_height is ship:orbit:body:radius + 100000.
 parameter t0 is time:seconds + 100.
 parameter burn_height is ship:orbit:semimajoraxis.
-parameter dontCheck is true.
+parameter dontCheck is false.
 
 clearScreen.
 print "Executing hohmann maneuver!".
@@ -34,8 +34,8 @@ add node(t0, 0, 0, deltaV).
 
 print "Execute Node? (y/n)" at (20, 16).
 
-if terminal:input:getchar = "y" or dontCheck{
-    runOncePath("0:/xman.ks").
+if dontCheck or terminal:input:getchar = "y"{
+    runPath("0:/xman.ks").
 } else {
     print "Maneuver cancelled." at (20, 16).
 }

@@ -30,7 +30,7 @@ function executeNode {
     set m0 to ship:mass*1000.
     lock acc to max(0.1, availableThrust/mass).
 
-    set m1 to m0/(constant:e^(0.6*deltaV/ISP)).
+    set m1 to m0/(constant:e^(0.5*deltaV/ISP)).
     set burnTime to (m0-m1)/fuelflow.
     set t0 to time:seconds + myNode:eta - burnTime.
 
@@ -84,6 +84,7 @@ function executeNode {
 
 if hasNode {
     set myNode to nextNode.
+    wait 1.
     executeNode().
 } else {
     clearScreen.

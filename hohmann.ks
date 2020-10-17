@@ -26,7 +26,7 @@ print "Transfer angle: "+round(ang, 2) at (0, 9).
 print "Execute Maneuver? (y/n)" at (20, 16).
 
 if terminal:input:getchar = "y" {
-    runOncePath("0:/hoho.ks", r2, time:seconds+Tf, r1).
+    runPath("0:/hoho.ks", r2, time:seconds+Tf, r1).
 } else {
     print "Maneuver Cancelled." at (20, 16).
 }
