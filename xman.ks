@@ -11,7 +11,8 @@ function executeNode {
         print "Staging..."+count at (20, 2).
         stage.
         set count to count+1.
-        set av_thrust to availableThrust.
+        set av_thrust to ship:availableThrustat(0).
+        preserve.
     }
 
     //Gathering info

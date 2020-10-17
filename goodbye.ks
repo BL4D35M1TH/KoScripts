@@ -1,5 +1,5 @@
 clearscreen.
-set orbit_height to 100000.
+parameter orbit_height is 100000.
 if ship:rootpart:tag:tonumber > 70000 {
     set orbit_height to ship:rootpart:tag:tonumber.
 }
@@ -20,13 +20,14 @@ when ship:availablethrustat(0) < av_thrust and stage:ready then {
     print "Staging..."+count at (20, 2).
     stage.
     set count to count+1.
-    set av_thrust to availableThrust.
-} 
+    set av_thrust to ship:availableThrustat(0).
+    preserve.
+}
 
 wait until apoapsis > 0.95*orbit_height.
-lock throttle to 1 - apoapsis/orbit_height.
+lock throttle to 1.1 - apoapsis/orbit_height.
 print "Coasting!" at (20, 16).
-wait until altitude > 70000.
+wait until altitude > 70000 and apoapsis > orbit_height.
 
 //Coasting
 lock throttle to 0.

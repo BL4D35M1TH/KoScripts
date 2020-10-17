@@ -10,4 +10,4 @@ if periapsis > apoapsis {
     set circ_time to eta:apoapsis.
 }
 
-runOncePath("0:/hoho.ks", circ_height, time:seconds + circ_time, circ_height, false).
+runOncePath("0:/hoho.ks", circ_height, time:seconds + circ_time, circ_height, true).
