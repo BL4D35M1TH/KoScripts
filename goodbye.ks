@@ -27,7 +27,9 @@ when ship:availablethrustat(0) < av_thrust and stage:ready then {
 wait until apoapsis > 0.95*orbit_height.
 lock throttle to 1.1 - apoapsis/orbit_height.
 print "Coasting!" at (20, 16).
-wait until altitude > 70000 and apoapsis > orbit_height.
+wait until apoapsis > orbit_height.
+lock throttle to 1 - apoapsis/orbit_height.
+wait until altitude > 70000.
 
 //Coasting
 lock throttle to 0.
