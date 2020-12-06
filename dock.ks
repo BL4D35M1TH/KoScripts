@@ -1,5 +1,6 @@
 {
 rcs on.
+sas off.
 set tgt_ship to target.
 set tgt_dock to tgt_ship:DockingPorts[0].
 set target to tgt_dock.
@@ -7,6 +8,7 @@ set ship_dock to ship:dockingports[0].
 ship_dock:controlfrom.
 set dock_dir to lookDirUp(-tgt_dock:portFacing:forevector, tgt_dock:portFacing:topvector).
 lock steering to dock_dir.
+wait until vAng(facing:vector, dock_dir:vector) < 1 and angularVel:mag < 1.
 lock rel_vel to ship:velocity:orbit - tgt_ship:velocity:orbit.
 set tgt_box to tgt_ship:bounds.
 set ship_box to ship:bounds.
@@ -38,6 +40,7 @@ set tgt_pos to tgt_dock:nodePosition.
 set displacement to V(0,0,0).
 set desiredVel to V(0,0,0).
 
+
 vecDraw(
     V(0,0,0),
     {return tgt_pos.},
@@ -53,14 +56,29 @@ set pos_accu to 4.
 set vel_accu to 0.3.
 set maxVel to 2.
 
+set tangent_vel to V(0,0,0).
+
+vecDraw(
+    V(0,0,0),
+    {return tangent_vel.},
+    RGB(255,255,0),
+    "",
+    1,
+    TRUE,
+    1,
+    TRUE
+).
+
 // Y(vel) = maxVel*((dist-prev_dist)/prev_dist))^2
 
 function getVel {
     parameter dist.
     set mag to dist:mag.
-    set vel to maxVel*min(1, mag/10 + 0.01).
-    print "mag "+round(mag, 1)+"  vel "+round(vel, 1) at (0,2).
-    return vel*dist:normalized.
+    set vel to maxVel*min(1, mag/10 + maxVel/10).
+    print "mag "+round(mag, 1) at (0, 1).
+    print "vel "+round(vel, 1) at (0,2).
+    set tangent_vel to vxcl(tgt_pos, rel_vel).
+    return vel*(dist:normalized).
 }
 
 function doLoop{
@@ -106,9 +124,13 @@ doLoop().
 
 set displacement to tgt_dock:portFacing:foreVector*4.
 set tgt_pos to tgt_dock:nodePosition + displacement.
+set pos_accu to 0.2.
+set vel_accu to 0.1.
 doLoop().
 
 set displacement to V(0,0,0).
 set tgt_pos to tgt_dock:nodePosition + displacement.
+set pos_accu to 0.02.
+set vel_accu to 0.1.
 doLoop().
 clearVecDraws().
