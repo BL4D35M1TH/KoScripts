@@ -6,7 +6,7 @@ set tgt_dock to tgt_ship:DockingPorts[0].
 set target to tgt_dock.
 set ship_dock to ship:dockingports[0].
 ship_dock:controlfrom.
-set dock_dir to lookDirUp(-tgt_dock:portFacing:forevector, tgt_dock:portFacing:topvector).
+lock dock_dir to lookDirUp(-tgt_dock:portFacing:forevector, tgt_dock:portFacing:topvector).
 lock steering to dock_dir.
 wait until vAng(facing:vector, dock_dir:vector) < 1 and angularVel:mag < 1.
 lock rel_vel to ship:velocity:orbit - tgt_ship:velocity:orbit.
@@ -52,18 +52,10 @@ vecDraw(
     TRUE
 ).
 
-set pos_accu to 4.
-set vel_accu to 0.3.
-set maxVel to 2.
-set rcsDeadZone to 0.05.
-
-
-set tangent_vel to V(0,0,0).
-
 vecDraw(
     V(0,0,0),
-    {return tangent_vel.},
-    RGB(255,255,0),
+    {return rel_vel.},
+    RGB(255,0,255),
     "",
     1,
     TRUE,
@@ -71,17 +63,13 @@ vecDraw(
     TRUE
 ).
 
-// Y(vel) = maxVel*((dist-prev_dist)/prev_dist))^2
+set pos_accu to 4.
+set vel_accu to 0.3.
+set maxVel to 2.
+set accel to 4.
+set rcsDeadZone to 0.05.
 
-function getVel {
-    parameter dist.
-    set mag to dist:mag.
-    set vel to maxVel*min(1, mag/10 + maxVel/10).
-    print "mag "+round(mag, 1) at (0, 1).
-    print "vel "+round(vel, 1) at (0,2).
-    set tangent_vel to vxcl(tgt_pos, rel_vel).
-    return vel*(dist:normalized).
-}
+
 set boardPos to -vDot(tgt_dock:nodePosition:normalized, tgt_dock:portFacing:starvector).
 function displacement{
     if toPlace = 0 {
@@ -98,12 +86,18 @@ function displacement{
     }
 }
 
+FUNCTION dist_to_vel {
+    PARAMETER distVec.
+    LOCAL targetVel IS MIN(SQRT(2 * distVec:MAG / accel) * accel,maxVel).
+    RETURN distVec:NORMALIZED * targetVel.
+}
+
 function doLoop{
 
     until tgt_pos:mag < pos_accu and rel_vel:mag < vel_accu {
 
     set tgt_pos to tgt_dock:nodePosition + displacement().
-    set desiredVel to getVel(tgt_pos).
+    set desiredVel to dist_to_vel(tgt_pos).
 
     set pidFore:setpoint to vDot(desiredVel, facing:forevector).
     set pidTop:setpoint  to vDot(desiredVel, facing:topvector).
