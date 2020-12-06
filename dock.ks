@@ -1,3 +1,4 @@
+{
 rcs on.
 set tgt_ship to target.
 set tgt_dock to tgt_ship:DockingPorts[0].
@@ -6,22 +7,36 @@ set ship_dock to ship:dockingports[0].
 ship_dock:controlfrom.
 set dock_dir to lookDirUp(-tgt_dock:portFacing:forevector, tgt_dock:portFacing:topvector).
 lock steering to dock_dir.
-lock rel_vel to tgt_ship:velocity:orbit - ship:velocity:orbit.
+lock rel_vel to ship:velocity:orbit - tgt_ship:velocity:orbit.
 set tgt_box to tgt_ship:bounds.
 set ship_box to ship:bounds.
-set clearance to 4*(tgt_box:size:mag + ship_box:size:mag).
+set clearance to 3*(tgt_box:size:mag + ship_box:size:mag).
+}
 
-set pidFore to pidLoop(0.025, 0.0008, 0.45).
+{
+set kP to 0.01.
+set kI to 0.005.
+set kD to 0.01.
+set Imin to -1.
+set Imax to 1.
+
+set pidFore to pidLoop(kP, kI, kD, Imin, Imax).
 set pidFore:setpoint to 0.
 
-set pidTop to pidLoop(0.025, 0.0008, 0.45).
+set pidTop to pidLoop(kP, kI, kD, Imin, Imax).
 set pidTop:setpoint to 0.
 
-set pidStar to pidLoop(0.025, 0.0008, 0.45).
+set pidStar to pidLoop(kP, kI, kD, Imin, Imax).
 set pidStar:setpoint to 0.
 
-set displacement to tgt_dock:portFacing:foreVector*4 -vxcl(tgt_dock:portFacing:foreVector, tgt_dock:nodePosition):normalized*clearance.
-lock tgt_pos to tgt_dock:nodePosition + displacement.
+set controlFore to 0.
+set controlTop to 0.
+set controlStar to 0.
+}
+
+set tgt_pos to tgt_dock:nodePosition.
+set displacement to V(0,0,0).
+set desiredVel to V(0,0,0).
 
 vecDraw(
     V(0,0,0),
@@ -34,35 +49,42 @@ vecDraw(
     TRUE
 ).
 
-lock offsetFore to vDot(tgt_pos, -facing:forevector).
-lock offsetTop to vDot(tgt_pos, -facing:topvector).
-lock offsetStar to vDot(tgt_pos, -facing:starvector).
+set pos_accu to 4.
+set vel_accu to 0.3.
+set maxVel to 2.
 
-set foreControl to 0.
-set topControl to 0.
-set starControl to 0.
+// Y(vel) = maxVel*((dist-prev_dist)/prev_dist))^2
 
-set start_time to time:seconds.
+function getVel {
+    parameter dist.
+    set mag to dist:mag.
+    set vel to maxVel*min(1, mag/10 + 0.01).
+    print "mag "+round(mag, 1)+"  vel "+round(vel, 1) at (0,2).
+    return vel*dist:normalized.
+}
+
 function doLoop{
-    parameter pos_acc is 4.
-    parameter vel_acc is 0.3.
-    // parameter doLog is false.
-    until tgt_pos:mag < pos_acc and rel_vel:mag < vel_acc {
-    set foreControl to  pidFore:update(time:seconds, offsetFore).
-    set topControl to  pidTop:update(time:seconds, offsetTop).
-    set starControl to  pidStar:update(time:seconds, offsetStar).
 
-    set ship:control:fore to foreControl.
-    set ship:control:top to topControl.
-    set ship:control:starboard to starControl.
+    until tgt_pos:mag < pos_accu and rel_vel:mag < vel_accu {
+
+    set tgt_pos to tgt_dock:nodePosition + displacement.
+    set desiredVel to getVel(tgt_pos).
+
+    set pidFore:setpoint to vDot(desiredVel, facing:forevector).
+    set pidTop:setpoint  to vDot(desiredVel, facing:topvector).
+    set pidStar:setpoint to vDot(desiredVel, facing:starvector).
+
+    set controlFore to controlFore + pidFore:update(time:seconds, vDot(rel_vel, facing:forevector)).
+    set controlTop to  controlTop  +  pidTop:update(time:seconds, vDot(rel_vel, facing:topvector)).
+    set controlStar to controlStar + pidStar:update(time:seconds, vDot(rel_vel, facing:starvector)).
+
+    set ship:control:fore to controlFore.
+    set ship:control:top to controlTop.
+    set ship:control:starboard to controlStar.
 
     if ship_dock:haspartner {
         break.
     }
-
-    // if doLog{
-    //     LOG time:seconds - start_time+","+pidFore:setpoint+","+offsetFore to "data.csv".
-    //     }
 
     wait 0.001.
 }
@@ -71,17 +93,22 @@ function doLoop{
     set ship:control:starboard to 0.
 }
 
-set start_time to time:seconds.
+clearScreen.
+
+set boardPos to -vDot(tgt_dock:nodePosition:normalized, tgt_dock:portFacing:starvector).
+set displacement to tgt_dock:portFacing:foreVector*4 + boardPos*tgt_dock:portFacing:starVector*clearance.
+set tgt_pos to tgt_dock:nodePosition + displacement.
+doLoop().
+
+set displacement to tgt_dock:portFacing:foreVector*2.
+set tgt_pos to tgt_dock:nodePosition + displacement.
 doLoop().
 
 set displacement to tgt_dock:portFacing:foreVector*4.
-
-doLoop(2, 0.2).
-
-set displacement to tgt_dock:portFacing:foreVector*2 .
-
-doLoop(1, 0.1).
+set tgt_pos to tgt_dock:nodePosition + displacement.
+doLoop().
 
 set displacement to V(0,0,0).
-
-doLoop(0.5, 0.1).
+set tgt_pos to tgt_dock:nodePosition + displacement.
+doLoop().
+clearVecDraws().
