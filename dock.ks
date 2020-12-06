@@ -37,7 +37,7 @@ set controlStar to 0.
 }
 
 set tgt_pos to tgt_dock:nodePosition.
-set displacement to V(0,0,0).
+set toPlace to 0.
 set desiredVel to V(0,0,0).
 
 
@@ -55,6 +55,8 @@ vecDraw(
 set pos_accu to 4.
 set vel_accu to 0.3.
 set maxVel to 2.
+set rcsDeadZone to 0.05.
+
 
 set tangent_vel to V(0,0,0).
 
@@ -80,12 +82,27 @@ function getVel {
     set tangent_vel to vxcl(tgt_pos, rel_vel).
     return vel*(dist:normalized).
 }
+set boardPos to -vDot(tgt_dock:nodePosition:normalized, tgt_dock:portFacing:starvector).
+function displacement{
+    if toPlace = 0 {
+        return tgt_dock:portFacing:foreVector*4 + boardPos*tgt_dock:portFacing:starVector*clearance.
+    }
+    else if toPlace = 1 {
+        return tgt_dock:portFacing:foreVector*4.
+    }
+    else if toPlace = 2 {
+        return tgt_dock:portFacing:foreVector*2.
+    }
+    else if toPlace = 3 {
+        return V(0,0,0).
+    }
+}
 
 function doLoop{
 
     until tgt_pos:mag < pos_accu and rel_vel:mag < vel_accu {
 
-    set tgt_pos to tgt_dock:nodePosition + displacement.
+    set tgt_pos to tgt_dock:nodePosition + displacement().
     set desiredVel to getVel(tgt_pos).
 
     set pidFore:setpoint to vDot(desiredVel, facing:forevector).
@@ -100,6 +117,10 @@ function doLoop{
     set ship:control:top to controlTop.
     set ship:control:starboard to controlStar.
 
+    if abs(controlFore) > rcsDeadZone { set controlFore to 0. }
+    if abs(controlTop) > rcsDeadZone { set controlTop to 0. }
+    if abs(controlStar) > rcsDeadZone { set controlStar to 0. }
+
     if ship_dock:haspartner {
         break.
     }
@@ -113,23 +134,18 @@ function doLoop{
 
 clearScreen.
 
-set boardPos to -vDot(tgt_dock:nodePosition:normalized, tgt_dock:portFacing:starvector).
-set displacement to tgt_dock:portFacing:foreVector*4 + boardPos*tgt_dock:portFacing:starVector*clearance.
-set tgt_pos to tgt_dock:nodePosition + displacement.
 doLoop().
 
-set displacement to tgt_dock:portFacing:foreVector*2.
-set tgt_pos to tgt_dock:nodePosition + displacement.
+
+set toPlace to 1.
 doLoop().
 
-set displacement to tgt_dock:portFacing:foreVector*4.
-set tgt_pos to tgt_dock:nodePosition + displacement.
+set toPlace to 2.
 set pos_accu to 0.2.
 set vel_accu to 0.1.
 doLoop().
 
-set displacement to V(0,0,0).
-set tgt_pos to tgt_dock:nodePosition + displacement.
+set toPlace to 3.
 set pos_accu to 0.02.
 set vel_accu to 0.1.
 doLoop().
